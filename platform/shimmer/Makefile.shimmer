@@ -1,0 +1,4 @@
+#LDFLAGS+="-L/usr/msp430/lib/ldscripts/msp430f1611"
+
+MCU=msp430f1611
+include $(CONTIKI)/cpu/msp430/Makefile.msp430
