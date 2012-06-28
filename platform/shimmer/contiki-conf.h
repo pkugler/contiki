@@ -4,21 +4,21 @@
 #define HAVE_STDINT_H
 #include "msp430def.h"
 
-#define WITH_SD				0
+#define WITH_SD				1
 
-#define NETSTACK_CONF_RADIO		cc1020_driver
-#define NETSTACK_CONF_RDC		lpp_driver
-#define NETSTACK_CONF_MAC		csma_driver
-#define NETSTACK_CONF_NETWORK		rime_driver
-#define NETSTACK_CONF_FRAMER		framer_nullmac
+//#define NETSTACK_CONF_RADIO		cc1020_driver
+//#define NETSTACK_CONF_RDC		lpp_driver
+//#define NETSTACK_CONF_MAC		csma_driver
+//#define NETSTACK_CONF_NETWORK		rime_driver
+//#define NETSTACK_CONF_FRAMER		framer_nullmac
 
-#define NETSTACK_CONF_RDC_CHANNEL_CHECK_RATE	8
+//#define NETSTACK_CONF_RDC_CHANNEL_CHECK_RATE	8
 
-#define ENERGEST_CONF_ON		1
+//#define ENERGEST_CONF_ON		1
 
-#define IRQ_PORT1			0x01
-#define IRQ_PORT2			0x02
-#define IRQ_ADC				0x03
+//#define IRQ_PORT1			0x01
+//#define IRQ_PORT2			0x02
+//#define IRQ_ADC				0x03
 
 /* MSP430 information memory */
 #define INFOMEM_START			0x1000
@@ -85,10 +85,10 @@ typedef int bool;
 #define ELFLOADER_CONF_TEXTMEMORY_SIZE	0x1000
 
 /* LEDs ports MSB430 */
-#define LEDS_PxDIR P5DIR
-#define LEDS_PxOUT P5OUT
-#define LEDS_CONF_RED			0x80
-#define LEDS_CONF_GREEN			0x00
-#define LEDS_CONF_YELLOW		0x00
+#define LEDS_PxDIR P4DIR
+#define LEDS_PxOUT P4OUT
+#define LEDS_CONF_RED			0x01
+#define LEDS_CONF_YELLOW		0x04
+#define LEDS_CONF_GREEN			0x08
 
 #endif /* !CONTIKI_CONF_H */
