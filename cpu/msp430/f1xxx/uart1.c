@@ -164,7 +164,25 @@ uart1_init(unsigned long ubr)
    */
   switch(ubr) {
 
-#if F_CPU == 3900000ul
+#if F_CPU == 8000000ul
+
+  case UART1_BAUD2UBR(115200ul):
+    UMCTL1 = 0xAA;
+    break;
+  case UART1_BAUD2UBR(57600ul):
+    UMCTL1 = 0xEF;
+    break;
+  case UART1_BAUD2UBR(38400ul):
+    UMCTL1 = 0x11;
+    break;
+  case UART1_BAUD2UBR(19200ul):
+    UMCTL1 = 0x5B;
+    break;
+  case UART1_BAUD2UBR(9600ul):
+    UMCTL1 = 0x09;
+    break;
+
+#elif F_CPU == 3900000ul
 
   case UART1_BAUD2UBR(115200ul):
     UMCTL1 = 0xF7;
