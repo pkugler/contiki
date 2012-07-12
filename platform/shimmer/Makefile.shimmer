@@ -1,4 +1,9 @@
-#LDFLAGS+="-L/usr/msp430/lib/ldscripts/msp430f1611"
+ifndef CONTIKI_TARGET_MAIN
+CONTIKI_TARGET_MAIN = contiki-shimmer-main.c
+endif
+
+CONTIKI_TARGET_DIRS = . dev
+CONTIKI_TARGET_SOURCEFILES += $(CONTIKI_TARGET_MAIN) uart0.c uart1.c ds2411.c
 
 MCU=msp430f1611
 include $(CONTIKI)/cpu/msp430/Makefile.msp430
