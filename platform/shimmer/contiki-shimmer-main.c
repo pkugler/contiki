@@ -1,6 +1,7 @@
 #include "contiki.h"
 #include "dev/leds.h"
 #include "dev/uart0.h"
+#include "dev/uart1.h"
 #include "dev/ds2411.h"
 #include "dev/serial-line.h"
 #include "dev/watchdog.h"
@@ -10,7 +11,7 @@
 
 int putchar(int c)
 {
-    uart0_writeb(c);
+    uart1_writeb(c);
     return c;
 }
 
@@ -21,6 +22,37 @@ int dock_connected(void)
 	} else {
 		return 1;
 	}
+}
+
+static void
+bluetooth_init(void)
+{
+  // enable bluetooth module
+  P4DIR |= 0x40;
+  P4SEL &= ~0x40;
+  P4OUT &= ~0x40;
+
+  // disable bluetooth reset
+  P5DIR |= 0x20;
+  P5SEL &= ~0x20;
+  P5OUT |= 0x20;
+
+  int16_t i;
+  for (i = 0; i < 400; i++) {
+      udelay(5000);
+  }
+
+  P1DIR |= 0x80;
+  P1DIR &= ~0x40;
+  P1SEL &= ~0xC0;
+
+  // toggle cts to wake up device
+  P1OUT &= ~0x80;
+  P1OUT |= 0x80;
+  udelay(5000);
+
+  // tell bluetooth module that msp is ready
+  P1OUT &= ~0x80;
 }
 
 static void
@@ -60,7 +92,7 @@ main(void)
   clock_init();
   rtimer_init();
 
-// use XT2 as main clock, set clock divder for SMCLK to 8
+// use XT2 as main clock, set clock divder for SMCLK to 1
 // MLCK:   8 MHz
 // SMCLK:  8 MHz
 // ACLK:  32.768 kHz
@@ -70,6 +102,8 @@ main(void)
 //  sht11_init();
   leds_init();
   leds_on(LEDS_ALL);
+
+  bluetooth_init();
 
   uart0_init(0x45);
   uart0_set_input(uart0_input);
