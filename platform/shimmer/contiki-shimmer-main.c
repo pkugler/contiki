@@ -1,4 +1,5 @@
 #include "contiki.h"
+#include "dev/busmaster.h"
 #include "dev/leds.h"
 #include "dev/uart0.h"
 #include "dev/uart1.h"
@@ -11,7 +12,7 @@
 
 int putchar(int c)
 {
-    uart1_writeb(c);
+    uart0_writeb(c);
     return c;
 }
 
@@ -22,37 +23,6 @@ int dock_connected(void)
 	} else {
 		return 1;
 	}
-}
-
-static void
-bluetooth_init(void)
-{
-  // enable bluetooth module
-  P4DIR |= 0x40;
-  P4SEL &= ~0x40;
-  P4OUT &= ~0x40;
-
-  // disable bluetooth reset
-  P5DIR |= 0x20;
-  P5SEL &= ~0x20;
-  P5OUT |= 0x20;
-
-  int16_t i;
-  for (i = 0; i < 400; i++) {
-      udelay(5000);
-  }
-
-  P1DIR |= 0x80;
-  P1DIR &= ~0x40;
-  P1SEL &= ~0xC0;
-
-  // toggle cts to wake up device
-  P1OUT &= ~0x80;
-  P1OUT |= 0x80;
-  udelay(5000);
-
-  // tell bluetooth module that msp is ready
-  P1OUT &= ~0x80;
 }
 
 static void
@@ -68,13 +38,6 @@ msb_ports_init(void)
 
 static int uart0_input(unsigned char c)
 {
-    serial_line_input_byte(c);
-    return 0;
-}
-
-static int uart1_input(unsigned char c)
-{
-    leds_on(LEDS_YELLOW);
     serial_line_input_byte(c);
     return 0;
 }
@@ -103,13 +66,11 @@ main(void)
   leds_init();
   leds_on(LEDS_ALL);
 
-  bluetooth_init();
+  uart0_disable_all();
+  uart1_disable_all();
 
   uart0_init(0x45);
   uart0_set_input(uart0_input);
-
-  uart1_init(0x45);
-  uart1_set_input(uart1_input);
 
   process_init();
 
