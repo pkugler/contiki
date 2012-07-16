@@ -1,4 +1,5 @@
 #include "contiki.h"
+#include "dev/bluetooth.h"
 #include "dev/busmaster.h"
 #include "dev/leds.h"
 #include "dev/uart0.h"
