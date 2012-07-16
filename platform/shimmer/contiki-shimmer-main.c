@@ -25,6 +25,24 @@ int dock_connected(void)
 	}
 }
 
+ISR(PORT2, port2_interrupt)
+{
+    // test for bluetooth interrupt
+    if (P2IFG & 0x40) {
+        // clear interrupt flag
+        P2IFG &= ~0x40;
+
+        // test if port is high
+        if (P2IN & 0x40) {
+            P2IES |= 0x40;
+            bluetooth_set_connected(1);
+        } else {
+            P2IES &= ~0x40;
+            bluetooth_set_connected(0);
+        }
+    }
+}
+
 static void
 msb_ports_init(void)
 {
@@ -71,6 +89,32 @@ main(void)
 
   uart0_init(0x45);
   uart0_set_input(uart0_input);
+
+  // accelerometer g range select
+  P4DIR |= 0x10;
+  P4SEL &= ~0x10;
+  P4OUT &= ~0x10;
+
+  // accelerometer disable sleep
+  P5DIR |= 0x01;
+  P5SEL &= ~0x01;
+  P5OUT |= 0x01;
+
+  // accelerometer input pins
+  P6DIR &= ~0x38;
+  P6OUT &= ~0x38;
+  P6SEL |= 0x38;
+
+  ADC12CTL0 = 0;
+  ADC12CTL0 = ADC12ON;// | SHT02;
+  ADC12CTL1 = SHP | CONSEQ0;// ADC12SSEL0 | ADC12SSEL1;
+
+  ADC12MCTL0 = INCH0 | INCH1;
+  ADC12MCTL1 = INCH2 | EOS;
+  ADC12MCTL2 = INCH2 | INCH0 | EOS;
+
+  // start conversion
+  ADC12CTL0 |= ENC | ADC12SC;
 
   process_init();
 
