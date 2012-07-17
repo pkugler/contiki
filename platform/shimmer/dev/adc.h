@@ -10,6 +10,9 @@ void adc_add(unsigned char pin);
 //! Start ADC capturing
 void adc_start(void);
 
+//! Returns ADC value
+unsigned short adc_get(unsigned char channel);
+
 //! Returns the number of configured channels
 unsigned char adc_num(void);
 

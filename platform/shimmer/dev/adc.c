@@ -70,6 +70,37 @@ void adc_start(void)
     ADC12CTL0 |= ADC12SC;
 }
 
+unsigned short adc_get(unsigned char channel)
+{
+    switch (channel) {
+    case 0:
+        return ADC12MEM0;
+
+    case 1:
+        return ADC12MEM1;
+
+    case 2:
+        return ADC12MEM2;
+
+    case 3:
+        return ADC12MEM3;
+
+    case 4:
+        return ADC12MEM4;
+
+    case 5:
+        return ADC12MEM5;
+
+    case 6:
+        return ADC12MEM6;
+
+    case 7:
+        return ADC12MEM7;
+    }
+
+    return 0;
+}
+
 unsigned char adc_num(void)
 {
     return num_ports;
