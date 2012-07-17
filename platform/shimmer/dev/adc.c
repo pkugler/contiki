@@ -1,0 +1,91 @@
+#include "adc.h"
+#include "contiki.h"
+
+static unsigned char num_ports;
+
+void adc_reset(void)
+{
+    num_ports = 0;
+
+    // disable ADC
+    ADC12CTL0 = 0;
+}
+
+void adc_add(unsigned char pin)
+{
+    switch (num_ports) {
+    case 0:
+        // enable ADC when first pin is added
+        ADC12CTL0 = ADC12ON;
+        ADC12CTL1 = SHP | CONSEQ0;// ADC12SSEL0 | ADC12SSEL1;
+        ADC12MCTL0 = (pin & 0x07) | EOS;
+        break;
+    
+    case 1:
+        ADC12MCTL0 &= ~EOS;
+        ADC12MCTL1 = (pin & 0x07) | EOS;
+        break;
+
+    case 2:
+        ADC12MCTL1 &= ~EOS;
+        ADC12MCTL2 = (pin & 0x07) | EOS;
+        break;
+
+    case 3:
+        ADC12MCTL2 &= ~EOS;
+        ADC12MCTL3 = (pin & 0x07) | EOS;
+        break;
+
+    case 4:
+        ADC12MCTL3 &= ~EOS;
+        ADC12MCTL4 = (pin & 0x07) | EOS;
+        break;
+
+    case 5:
+        ADC12MCTL4 &= ~EOS;
+        ADC12MCTL5 = (pin & 0x07) | EOS;
+        break;
+
+    case 6:
+        ADC12MCTL5 &= ~EOS;
+        ADC12MCTL6 = (pin & 0x07) | EOS;
+        break;
+
+    case 7:
+        ADC12MCTL6 &= ~EOS;
+        ADC12MCTL7 = (pin & 0x07) | EOS;
+        break;
+
+    default:
+        // no more ADC channels available
+        return;
+    }
+
+    num_ports++;
+}
+
+void adc_start(void)
+{
+    ADC12CTL0 |= ENC;
+    ADC12CTL0 |= ADC12SC;
+}
+
+unsigned char adc_num(void)
+{
+    return num_ports;
+}
+
+/*
+        printf("ADC: %4u %4u %4u\n", ADC12MEM0, ADC12MEM1, ADC12MEM2);
+
+        ADC12CTL0 = 0;
+        ADC12CTL0 = ADC12ON;// | SHT02;
+        ADC12CTL1 = SHP | CONSEQ0;// ADC12SSEL0 | ADC12SSEL1;
+
+        ADC12MCTL0 = INCH0 | INCH1;
+        ADC12MCTL1 = INCH2;
+        ADC12MCTL2 = INCH2 | INCH0 | EOS;
+
+        // start conversion
+        ADC12CTL0 |= ENC | ADC12SC;
+*/

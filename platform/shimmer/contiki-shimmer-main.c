@@ -1,4 +1,5 @@
 #include "contiki.h"
+#include "dev/adc.h"
 #include "dev/bluetooth.h"
 #include "dev/busmaster.h"
 #include "dev/leds.h"
@@ -69,7 +70,7 @@ main(void)
 
   /* Platform-specific initialization. */
   msb_ports_init();
-//  adc_init();
+  adc_reset();
 
   clock_init();
   rtimer_init();

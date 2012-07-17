@@ -3,7 +3,7 @@ CONTIKI_TARGET_MAIN = contiki-shimmer-main.c
 endif
 
 CONTIKI_TARGET_DIRS = . dev
-CONTIKI_TARGET_SOURCEFILES += $(CONTIKI_TARGET_MAIN) bluetooth.c busmaster.c uart0.c uart1.c ds2411.c
+CONTIKI_TARGET_SOURCEFILES += $(CONTIKI_TARGET_MAIN) adc.c bluetooth.c busmaster.c uart0.c uart1.c ds2411.c
 
 MCU=msp430f1611
 include $(CONTIKI)/cpu/msp430/Makefile.msp430
