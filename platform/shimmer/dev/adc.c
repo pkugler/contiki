@@ -16,11 +16,11 @@ void adc_add(unsigned char pin)
     switch (num_ports) {
     case 0:
         // enable ADC when first pin is added
-        ADC12CTL0 = ADC12ON;
-        ADC12CTL1 = SHP | CONSEQ0;// ADC12SSEL0 | ADC12SSEL1;
+        ADC12CTL0 = ADC12ON | REF2_5V | MSC | SHT0_0 | SHT1_0;
+        ADC12CTL1 = SHP | CONSEQ0 | ADC12SSEL0 | ADC12SSEL1 | ADC12DIV_0 ;
         ADC12MCTL0 = (pin & 0x07) | EOS;
         break;
-    
+
     case 1:
         ADC12MCTL0 &= ~EOS;
         ADC12MCTL1 = (pin & 0x07) | EOS;
@@ -105,18 +105,3 @@ unsigned char adc_num(void)
 {
     return num_ports;
 }
-
-/*
-        printf("ADC: %4u %4u %4u\n", ADC12MEM0, ADC12MEM1, ADC12MEM2);
-
-        ADC12CTL0 = 0;
-        ADC12CTL0 = ADC12ON;// | SHT02;
-        ADC12CTL1 = SHP | CONSEQ0;// ADC12SSEL0 | ADC12SSEL1;
-
-        ADC12MCTL0 = INCH0 | INCH1;
-        ADC12MCTL1 = INCH2;
-        ADC12MCTL2 = INCH2 | INCH0 | EOS;
-
-        // start conversion
-        ADC12CTL0 |= ENC | ADC12SC;
-*/
