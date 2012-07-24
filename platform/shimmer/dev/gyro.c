@@ -1,20 +1,14 @@
 #include "contiki.h"
+#include "hwconf.h"
 #include "gyro.h"
+
+HWCONF_PIN(GYRO_PWREN_N, 1, 1)
+HWCONF_PIN(SEL_A0, 1, 4)
+HWCONF_PIN(GYRO_ZERO, 3, 4)
 
 void gyro_enable(void)
 {
-    // enable gyro on extension board
-    P1SEL &= ~0x10;
-    P1DIR |= 0x10;
-    P1OUT |= 0x10;
-
-    P3SEL &= ~0x10;
-    P3DIR |= 0x10;
-    P3OUT &= ~0x10;
-
-    P1SEL &= ~0x02;
-    P1DIR |= 0x02;
-    P1OUT |= 0x02;
+    gyro_disable();
 
     // wait for capacitors to discharge (6 seconds???)
     short i;
@@ -22,21 +16,21 @@ void gyro_enable(void)
         udelay(1000);
     }
 
-    P1OUT &= ~0x02;
-    P1OUT &= ~0x10;
+    GYRO_PWREN_N_CLEAR();
+    SEL_A0_CLEAR();
 }
 
 void gyro_disable(void)
 {
-    P1SEL &= ~0x10;
-    P1DIR |= 0x10;
-    P1OUT |= 0x10;
+    SEL_A0_SELECT_IO();
+    SEL_A0_MAKE_OUTPUT();
+    SEL_A0_SET();
 
-    P3SEL &= ~0x10;
-    P3DIR |= 0x10;
-    P3OUT &= ~0x10;
+    GYRO_ZERO_SELECT_IO();
+    GYRO_ZERO_MAKE_OUTPUT();
+    GYRO_ZERO_CLEAR();
 
-    P1SEL &= ~0x02;
-    P1DIR |= 0x02;
-    P1OUT |= 0x02;
+    GYRO_PWREN_N_SELECT_IO();
+    GYRO_PWREN_N_MAKE_OUTPUT();
+    GYRO_PWREN_N_SET();
 }
