@@ -1,6 +1,14 @@
 #include "bluetooth.h"
 #include "busmaster.h"
+#include "hwconf.h"
 #include "dev/uart1.h"
+
+HWCONF_PIN(BT_RTS, 1, 6)
+HWCONF_PIN(BT_CTS, 1, 7)
+HWCONF_PIN(BT_PIO, 2, 6)
+HWCONF_IRQ(BT_PIO, 2, 6)
+HWCONF_PIN(SW_BT_PWR_N, 4, 6)
+HWCONF_PIN(BT_RESET, 5, 5)
 
 static void (*connect)(unsigned char connected);
 
@@ -13,14 +21,14 @@ void bluetooth_enable(void (*connect_handler)(unsigned char connected), int (*da
     uart1_set_input(data_handler);
 
     // power up bluetooth module
-    P4DIR |= 0x40;
-    P4SEL &= ~0x40;
-    P4OUT &= ~0x40;
+    SW_BT_PWR_N_SELECT_IO();
+    SW_BT_PWR_N_MAKE_OUTPUT();
+    SW_BT_PWR_N_CLEAR();
 
     // disable bluetooth reset
-    P5DIR |= 0x20;
-    P5SEL &= ~0x20;
-    P5OUT |= 0x20;
+    BT_RESET_SELECT_IO();
+    BT_RESET_MAKE_OUTPUT();
+    BT_RESET_SET();
 
     // wait for reset to complete
     int16_t i;
@@ -28,47 +36,52 @@ void bluetooth_enable(void (*connect_handler)(unsigned char connected), int (*da
       udelay(5000);
     }
 
-    P1DIR |= 0x80;
-    P1DIR &= ~0x40;
-    P1SEL &= ~0xC0;
+    // RTS is input
+    BT_RTS_SELECT_IO();
+    BT_RTS_MAKE_INPUT();
+
+    // CTS is output
+    BT_CTS_SELECT_IO();
+    BT_CTS_MAKE_OUTPUT();
+    BT_CTS_SET();
 
     // enable connect interrupt
     connect = connect_handler;
-    P2DIR &= ~0x40;
-    P2SEL &= ~0x40;
-    if (P2IN & 0x40) {
-        P2IES |= 0x40;
+    BT_PIO_SELECT_IO();
+    BT_PIO_MAKE_INPUT();
+    if (BT_PIO_READ()) {
+        BT_PIO_IRQ_EDGE_SELECTD();
     } else {
-        P2IES &= ~0x40;
+        BT_PIO_IRQ_EDGE_SELECTU();
     }
-    P2IE |= 0x40;
+    BT_PIO_ENABLE_IRQ();
 
     // rise cts to wake up device
-    P1OUT &= ~0x80;
-    P1OUT |= 0x80;
+    BT_CTS_CLEAR();
+    BT_CTS_SET();
 
     // waking up from sleep mode can take up to 5ms
     udelay(5000);
 
-    // tell bluetooth module that msp is ready
-    P1OUT &= ~0x80;
+    // from now on msp is ready to receive data
+    BT_CTS_CLEAR();
 }
 
 void bluetooth_disable(void)
 {
     // disable connect interrupt
     connect = NULL;
-    P2IE &= ~0x40;
+    BT_PIO_DISABLE_IRQ();
 
     // enable bluetooth reset
-    P5DIR &= ~0x20;
-    P5SEL &= ~0x20;
-    P5OUT &= ~0x20;
+    BT_RESET_SELECT_IO();
+    BT_RESET_MAKE_OUTPUT();
+    BT_RESET_CLEAR();
 
     // power down bluetooth module
-    P4DIR |= 0x40;
-    P4SEL &= ~0x40;
-    P4OUT |= 0x40;
+    SW_BT_PWR_N_SELECT_IO();
+    SW_BT_PWR_N_MAKE_OUTPUT();
+    SW_BT_PWR_N_SET();
 }
 
 void bluetooth_set_connected(int connected)
