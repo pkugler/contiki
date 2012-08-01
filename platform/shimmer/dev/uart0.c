@@ -106,6 +106,13 @@ void uart0_i2c_start(void)
     UCTL0 |= I2CEN;
 }
 
+void uart0_i2c_stop(void)
+{
+    UCTL0 = SWRST;
+    P3SEL &= 0x0A;
+    P3DIR &= 0x0A;
+}
+
 void uart0_i2c_write(uint8_t address, const void *data, uint8_t size, uart0_i2c_callback callback)
 {
     txbuf_beg = data;
