@@ -1,272 +1,226 @@
-/*
- * Copyright (c) 2006, Swedish Institute of Computer Science
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the Institute nor the names of its contributors
- *    may be used to endorse or promote products derived from this software
- *    without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE INSTITUTE AND CONTRIBUTORS ``AS IS'' AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE INSTITUTE OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- *
- * @(#)$Id: uart0.c,v 1.24 2011/01/19 20:44:20 joxe Exp $
- */
-
-/*
- * Machine dependent MSP430 UART0 code.
- */
-
 #include "contiki.h"
-#include "sys/energest.h"
-#include "dev/uart0.h"
-#include "dev/watchdog.h"
-#include "sys/ctimer.h"
-#include "lib/ringbuf.h"
 #include "isr_compat.h"
+#include "dev/uart0.h"
+#include "lib/ringbuf.h"
+
+enum Mode
+{
+    MODE_NONE,
+    MODE_UART,
+    MODE_SPI,
+    MODE_I2C
+};
+
+static enum Mode mode = MODE_NONE;
 
 static int (*uart0_input_handler)(unsigned char c);
+static uart0_i2c_callback transfer_handler;
 static volatile uint8_t rx_in_progress;
-
 static volatile uint8_t transmitting;
 
-#ifdef UART0_CONF_TX_WITH_INTERRUPT
-#define TX_WITH_INTERRUPT UART0_CONF_TX_WITH_INTERRUPT
-#else /* UART0_CONF_TX_WITH_INTERRUPT */
-#define TX_WITH_INTERRUPT 0
-#endif /* UART0_CONF_TX_WITH_INTERRUPT */
-
-#ifdef UART0_CONF_RX_WITH_DMA
-#define RX_WITH_DMA UART0_CONF_RX_WITH_DMA
-#else /* UART0_CONF_RX_WITH_DMA */
-#define RX_WITH_DMA 1
-#endif /* UART0_CONF_RX_WITH_DMA */
-
-#if TX_WITH_INTERRUPT
 #define TXBUFSIZE 128
-
 static struct ringbuf txbuf;
 static uint8_t txbuf_data[TXBUFSIZE];
-#endif /* TX_WITH_INTERRUPT */
+static const uint8_t *txbuf_beg;
+static uint8_t *rxbuf_beg;
+static uint8_t txbuf_size;
+static uint8_t txbuf_pos;
 
-#if RX_WITH_DMA
-#define RXBUFSIZE 128
-
-static uint8_t rxbuf[RXBUFSIZE];
-static uint16_t last_size;
-static struct ctimer rxdma_timer;
-
-static void
-handle_rxdma_timer(void *ptr)
+uint8_t uart0_active(void)
 {
-  uint16_t size;
-  size = DMA0SZ; /* Note: loop requires that size is less or eq to RXBUFSIZE */
-  while(last_size != size) {
-/*     printf("read: %c [%d,%d]\n", (unsigned char)rxbuf[RXBUFSIZE - last_size], */
-/* 	   last_size, size); */
-    uart0_input_handler((unsigned char)rxbuf[RXBUFSIZE - last_size]);
-    last_size--;
-    if(last_size == 0) last_size = RXBUFSIZE;
-  }
-
-  ctimer_reset(&rxdma_timer);
+    return ((~ UTCTL0) & TXEPT) | rx_in_progress | transmitting;
 }
-#endif /* RX_WITH_DMA */
 
-/*---------------------------------------------------------------------------*/
-uint8_t
-uart0_active(void)
+void uart0_set_input(int (*input)(unsigned char c))
 {
-  return ((~ UTCTL0) & TXEPT) | rx_in_progress | transmitting;
+    uart0_input_handler = input;
 }
-/*---------------------------------------------------------------------------*/
-void
-uart0_set_input(int (*input)(unsigned char c))
+
+void uart0_writeb(unsigned char c)
 {
-#if RX_WITH_DMA /* This needs to be called after ctimer process is started */
-  ctimer_set(&rxdma_timer, CLOCK_SECOND/64, handle_rxdma_timer, NULL);
-#endif
-  uart0_input_handler = input;
+    /* Put the outgoing byte on the transmission buffer. If the buffer
+       is full, we just keep on trying to put the byte into the buffer
+       until it is possible to put it there. */
+    while(ringbuf_put(&txbuf, c) == 0);
+
+    /* If there is no transmission going, we need to start it by putting
+       the first byte into the UART. */
+    if(transmitting == 0) {
+        transmitting = 1;
+        TXBUF0 = ringbuf_get(&txbuf);
+    }
 }
-/*---------------------------------------------------------------------------*/
-void
-uart0_writeb(unsigned char c)
+
+void uart0_start(uint8_t ubr0, uint8_t ubr1, uint8_t umctl)
 {
-  watchdog_periodic();
-#if TX_WITH_INTERRUPT
+    mode = MODE_UART;
 
-  /* Put the outgoing byte on the transmission buffer. If the buffer
-     is full, we just keep on trying to put the byte into the buffer
-     until it is possible to put it there. */
-  while(ringbuf_put(&txbuf, c) == 0);
+    P3DIR &= ~0x20;
+    P3DIR |= 0x10;
+    P3SEL |= 0x30;
 
-  /* If there is no transmission going, we need to start it by putting
-     the first byte into the UART. */
-  if(transmitting == 0) {
-    transmitting = 1;
+    UCTL0 = SWRST | CHAR;
+    UTCTL0 = SSEL1;
 
-    /* Loop until the transmission buffer is available. */
-    /*while((IFG1 & UTXIFG0) == 0);*/
-    TXBUF0 = ringbuf_get(&txbuf);
-  }
+    UBR00 = ubr0;
+    UBR10 = ubr1;
+    UMCTL0 = umctl;
 
-#else /* TX_WITH_INTERRUPT */
+    ME1 &= ~USPIE0;
+    ME1 |= (UTXE0 | URXE0);
 
-  /* Loop until the transmission buffer is available. */
-  while((IFG1 & UTXIFG0) == 0);
+    UCTL0 &= ~SWRST;
 
-  /* Transmit the data. */
-  TXBUF0 = c;
-#endif /* TX_WITH_INTERRUPT */
+    /* clear pending interrupts before enable */
+    IFG1 &= ~URXIFG0;
+    U0TCTL |= URXSE;
+
+    rx_in_progress = 0;
+    transmitting = 0;
+
+    ringbuf_init(&txbuf, txbuf_data, sizeof(txbuf_data));
+    IE1 |= URXIE0 | UTXIE0;
 }
-/*---------------------------------------------------------------------------*/
-/**
- * Initalize the RS232 port.
- *
- */
-void
-uart0_init(unsigned long ubr)
+
+void uart0_spi_start(void)
 {
-  /* RS232 */
-  P3DIR &= ~0x20;			/* Select P35 for input (UART0RX) */
-  P3DIR |= 0x10;			/* Select P34 for output (UART0TX) */
-  P3SEL |= 0x30;			/* Select P36,P37 for UART0{TX,RX} */
-
-  UCTL0 = SWRST | CHAR;                 /* 8-bit character, UART mode */
-
-#if 0
-  U0RCTL &= ~URXEIE; /* even erroneous characters trigger interrupts */
-#endif
-
-  UTCTL0 = SSEL1;                       /* UCLK = MCLK */
-
-  UBR00 = ubr;
-  UBR10 = ubr >> 8;
-  /*
-   * UMCTL0 values calculated using
-   * http://mspgcc.sourceforge.net/baudrate.html
-   */
-  switch(ubr) {
-
-#if F_CPU == 8000000ul
-
-  case UART0_BAUD2UBR(115200ul):
-    UMCTL0 = 0xAA;
-    break;
-  case UART0_BAUD2UBR(57600ul):
-    UMCTL0 = 0xEF;
-    break;
-  case UART0_BAUD2UBR(38400ul):
-    UMCTL0 = 0x11;
-    break;
-  case UART0_BAUD2UBR(19200ul):
-    UMCTL0 = 0x5B;
-    break;
-  case UART0_BAUD2UBR(9600ul):
-    UMCTL0 = 0x09;
-    break;
-
-#else
-
-#error Unsupported CPU speed in uart0.c
-
-#endif
-  }
-
-  ME1 &= ~USPIE0;			/* USART0 SPI module disable */
-  ME1 |= (UTXE0 | URXE0);               /* Enable USART0 TXD/RXD */
-
-  UCTL0 &= ~SWRST;
-
-  /* XXX Clear pending interrupts before enable!!! */
-  IFG1 &= ~URXIFG0;
-  U0TCTL |= URXSE;
-
-  rx_in_progress = 0;
-
-  transmitting = 0;
-
-  IE1 |= URXIE0;                        /* Enable USART0 RX interrupt  */
-#if TX_WITH_INTERRUPT
-  ringbuf_init(&txbuf, txbuf_data, sizeof(txbuf_data));
-  IE1 |= UTXIE0;                        /* Enable USART0 TX interrupt  */
-#endif /* TX_WITH_INTERRUPT */
-
-#if RX_WITH_DMA
-  IE1 &= ~URXIE0; /* disable USART0 RX interrupt  */
-  /* UART0_RX trigger */
-  DMACTL0 = DMA0TSEL_9;
-
-  /* source address = RXBUF1 */
-  DMA0SA = (unsigned int) &RXBUF0;
-  DMA0DA = (unsigned int) &rxbuf;
-  DMA0SZ = RXBUFSIZE;
-  last_size = RXBUFSIZE;
-  DMA0CTL = DMADT_4 + DMASBDB + DMADSTINCR_3 + DMAEN + DMAREQ;// DMAIE;
-
-  msp430_add_lpm_req(MSP430_REQUIRE_LPM1);
-#endif /* RX_WITH_DMA */
+    mode = MODE_SPI;
+    UCTL0 = SWRST;
 }
-/*---------------------------------------------------------------------------*/
-#if !RX_WITH_DMA
+
+void uart0_i2c_start(void)
+{
+    mode = MODE_I2C;
+    UCTL0 = SWRST;
+    UCTL0 |= SYNC | I2C;
+    UCTL0 &= ~I2CEN;
+
+    P3SEL |= 0x0A;
+    P3DIR &= ~0x0A;
+
+    I2CTCTL |= I2CSSEL1 | I2CRM; // select clock source
+    I2CPSC = 3;
+    I2CSCLH = 3;
+    I2CSCLL = 3;
+    I2COA = 0;
+    UCTL0 |= I2CEN;
+}
+
+void uart0_i2c_write(uint8_t address, const void *data, uint8_t size, uart0_i2c_callback callback)
+{
+    txbuf_beg = data;
+    txbuf_size = size;
+    txbuf_pos = 0;
+    transfer_handler = callback;
+
+    UCTL0 |= MST; // set master
+    I2CTCTL |= I2CTRX; // transmit mode
+    I2CSA = address;
+    I2CIE |= TXRDYIE; // tx ready irq
+    I2CIE |= ARDYIE; // access ready irq
+    I2CIE |= NACKIE; // no ack irq
+    I2CTCTL |= I2CSTT;
+}
+
+void uart0_i2c_read(uint8_t address, void *data, uint8_t size, uart0_i2c_callback callback)
+{
+    rxbuf_beg = data;
+    txbuf_size = size;
+    txbuf_pos = 0;
+    transfer_handler = callback;
+
+    UCTL0 |= MST; // set master
+    I2CTCTL &= ~I2CTRX; // receive mode
+    I2CSA = address;
+    I2CIE |= RXRDYIE; // rx ready irq
+    I2CIE |= ARDYIE; // access ready irq
+    I2CIE |= NACKIE; // no ack irq
+    I2CTCTL |= I2CSTT;
+}
+
+static void end_transmit(uint8_t success)
+{
+    I2CIE = 0;
+    if (transfer_handler) {
+        transfer_handler(success);
+    }
+}
+
 ISR(UART0RX, uart0_rx_interrupt)
 {
-  uint8_t c;
-  ENERGEST_ON(ENERGEST_TYPE_IRQ);
+    uint8_t c;
+    ENERGEST_ON(ENERGEST_TYPE_IRQ);
 
-  if(!(URXIFG0 & IFG1)) {
-    /* Edge detect if IFG not set? */
-    U0TCTL &= ~URXSE; /* Clear the URXS signal */
-    U0TCTL |= URXSE;  /* Re-enable URXS - needed here?*/
-    rx_in_progress = 1;
-    LPM4_EXIT;
-  } else {
-    rx_in_progress = 0;
-    /* Check status register for receive errors. */
-    if(URCTL0 & RXERR) {
-      c = RXBUF0;   /* Clear error flags by forcing a dummy read. */
+    if(!(URXIFG0 & IFG1)) {
+        /* Edge detect if IFG not set? */
+        U0TCTL &= ~URXSE; /* Clear the URXS signal */
+        U0TCTL |= URXSE;  /* Re-enable URXS - needed here?*/
+        rx_in_progress = 1;
+        LPM4_EXIT;
     } else {
-      c = RXBUF0;
-      if(uart0_input_handler != NULL) {
-	if(uart0_input_handler(c)) {
-	  LPM4_EXIT;
-	}
-      }
+        rx_in_progress = 0;
+        /* Check status register for receive errors. */
+        if(URCTL0 & RXERR) {
+            c = RXBUF0;   /* Clear error flags by forcing a dummy read. */
+        } else {
+            c = RXBUF0;
+            if(uart0_input_handler != NULL) {
+                if(uart0_input_handler(c)) {
+                    LPM4_EXIT;
+                }
+            }
+        }
     }
-  }
 
-  ENERGEST_OFF(ENERGEST_TYPE_IRQ);
+    ENERGEST_OFF(ENERGEST_TYPE_IRQ);
 }
-#endif /* !RX_WITH_DMA */
-/*---------------------------------------------------------------------------*/
-#if TX_WITH_INTERRUPT
+
 ISR(UART0TX, uart0_tx_interrupt)
 {
-  ENERGEST_ON(ENERGEST_TYPE_IRQ);
+    ENERGEST_ON(ENERGEST_TYPE_IRQ);
+    
+    switch (mode) {
+    case MODE_NONE:
+        break;
 
-  if(ringbuf_elements(&txbuf) == 0) {
-    transmitting = 0;
-  } else {
-    TXBUF0 = ringbuf_get(&txbuf);
-  }
+    case MODE_UART:
+        if(ringbuf_elements(&txbuf) == 0) {
+            transmitting = 0;
+        } else {
+            TXBUF0 = ringbuf_get(&txbuf);
+        }
+        break;
 
-  ENERGEST_OFF(ENERGEST_TYPE_IRQ);
+    case MODE_SPI:
+        break;
+
+    case MODE_I2C:
+        switch (I2CIV) {
+        case I2CIV_NACK:
+            end_transmit(0);
+            break;
+
+        case I2CIV_ARDY:
+            end_transmit(1);
+            break;
+
+        case I2CIV_TXRDY:
+            if (txbuf_pos + 1 == txbuf_size) {
+                I2CTCTL |= I2CSTP;
+            }
+            I2CDRB = txbuf_beg[txbuf_pos++];
+            break;
+
+        case I2CIV_RXRDY:
+            rxbuf_beg[txbuf_pos++] = I2CDRB;
+            if (txbuf_pos == txbuf_size) {
+                I2CTCTL |= I2CSTP;
+                end_transmit(1);
+            }
+            break;
+        }
+        break;
+    }
+
+    ENERGEST_OFF(ENERGEST_TYPE_IRQ);
 }
-#endif /* TX_WITH_INTERRUPT */
-/*---------------------------------------------------------------------------*/

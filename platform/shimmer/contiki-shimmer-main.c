@@ -48,7 +48,7 @@ ISR(PORT2, port2_interrupt)
 static void
 msb_ports_init(void)
 {
-  P1SEL = 0xC0; P1OUT = 0x00; P1DIR = 0x80;
+  P1SEL = 0x00; P1OUT = 0x00; P1DIR = 0x00;
   P2SEL = 0x00; P2OUT = 0x00; P2DIR = 0x00;
   P3SEL = 0x00; P3OUT = 0x00; P3DIR = 0x00;
   P4SEL = 0x00; P4OUT = 0x00; P4DIR = 0x00;
@@ -88,9 +88,6 @@ main(void)
 
   uart0_disable_all();
   uart1_disable_all();
-
-  uart0_init(0x45);
-  uart0_set_input(uart0_input);
 
   // accelerometer g range select
   P4DIR |= 0x10;
