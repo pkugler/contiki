@@ -46,18 +46,18 @@ static enum state state = STATE_IDLE;
 
 static void callback_function(uint8_t success);
 
-static void hmc5843_start_continuous(void)
+static void hmc5843_set_mode(enum hmc5843_mode mode)
 {
     state = STATE_STARTING;
     command[0] = HMC5843_MODE;
-    command[1] = HMC5843_MODE_CONTINUOUS;
+    command[1] = mode;
     uart0_i2c_write(HMC5843_ID, command, 2, callback_function);
 }
 
-static void hmc5843_prepare_read(void)
+static void hmc5843_set_register(enum hmc5843_register reg)
 {
     state = STATE_PREPARING;
-    command[0] = HMC5843_OUTPUT_X_H;
+    command[0] = reg;
     uart0_i2c_write(HMC5843_ID, command, 1, callback_function);
 }
 
@@ -76,7 +76,7 @@ void hmc5843_enable(void)
     hmc5843_disable();
     GYRO_PWREN_N_CLEAR();
     udelay(5000);
-    hmc5843_start_continuous();
+    hmc5843_set_mode(HMC5843_MODE_SINGLE);
 }
 
 void hmc5843_disable(void)
@@ -97,7 +97,7 @@ static void callback_function(uint8_t success)
             break;
 
         case STATE_STARTING:
-            hmc5843_prepare_read();
+            state = STATE_IDLE;
             break;
 
         case STATE_PREPARING:
@@ -113,7 +113,7 @@ static void callback_function(uint8_t success)
                 hmc5843_callback(success);
             }
 
-            state = STATE_IDLE;
+            hmc5843_set_mode(HMC5843_MODE_SINGLE);
         }
     }
 }
