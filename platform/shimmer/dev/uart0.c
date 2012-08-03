@@ -108,9 +108,11 @@ void uart0_i2c_start(void)
 
 void uart0_i2c_stop(void)
 {
+    mode = MODE_NONE;
+    UCTL0 = 0;
     UCTL0 = SWRST;
-    P3SEL &= 0x0A;
-    P3DIR &= 0x0A;
+    P3SEL &= ~0x0A;
+    P3DIR &= ~0x0A;
 }
 
 void uart0_i2c_write(uint8_t address, const void *data, uint8_t size, uart0_i2c_callback callback)
@@ -214,7 +216,11 @@ ISR(UART0TX, uart0_tx_interrupt)
         case I2CIV_TXRDY:
             if (txbuf_pos + 1 == txbuf_size) {
                 I2CTCTL |= I2CSTP;
+            } else if (txbuf_pos == txbuf_size) {
+                end_transmit(1);
+                break;
             }
+
             I2CDRB = txbuf_beg[txbuf_pos++];
             break;
 
