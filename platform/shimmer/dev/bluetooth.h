@@ -4,17 +4,30 @@
 #include "contiki.h"
 
 //! Enable the bluetooth device
-//! Any other devices on the same bus will be disabled
+//!
 //! @param connect_handler  This function will be called when the connect
 //!                         state changes.
-//! @param data_handler     This function will be called whenever a byte
-//!                         has been received
-void bluetooth_enable(void (*connect_handler)(unsigned char connected), int (*data_handler)(unsigned char c));
+void bluetooth_enable(void (*connect_handler)(unsigned char connected));
 
 //! Disable the bluetooth device
 void bluetooth_disable(void);
 
+//! Enables communication to the bluetooth device
+//!
+//! @note You should only call this function after all other devices on UART1
+//!       have been disabled!
+//! @param data_handler This function will be called whenever a byte
+//!                     has been received.
+void bluetooth_enable_communication(int (*data_handler)(unsigned char c));
+
+//! Disables communication to the bluetooth device
+//!
+//! After calling this function it is safe to use UART1 for SPI communication.
+//! The bluetooth module stays enabled and buffers incoming data.
+void bluetooth_disable_communication();
+
 //! Calls configured connect_handler
+//!
 //! This function should be called from ISR
 //! @param connected        Connection state of the device
 void bluetooth_set_connected(int connected);

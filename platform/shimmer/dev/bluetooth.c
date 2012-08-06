@@ -1,5 +1,4 @@
 #include "bluetooth.h"
-#include "busmaster.h"
 #include "hwconf.h"
 #include "dev/uart1.h"
 
@@ -12,14 +11,8 @@ HWCONF_PIN(BT_RESET, 5, 5)
 
 static void (*connect)(unsigned char connected);
 
-void bluetooth_enable(void (*connect_handler)(unsigned char connected), int (*data_handler)(unsigned char c))
+void bluetooth_enable(void (*connect_handler)(unsigned char connected))
 {
-    // first disable all devices on the bus including SPI
-    uart1_disable_all();
-
-    uart1_init(0x45);
-    uart1_set_input(data_handler);
-
     // power up bluetooth module
     SW_BT_PWR_N_SELECT_IO();
     SW_BT_PWR_N_MAKE_OUTPUT();
@@ -62,9 +55,6 @@ void bluetooth_enable(void (*connect_handler)(unsigned char connected), int (*da
 
     // waking up from sleep mode can take up to 5ms
     udelay(5000);
-
-    // from now on msp is ready to receive data
-    BT_CTS_CLEAR();
 }
 
 void bluetooth_disable(void)
@@ -82,6 +72,19 @@ void bluetooth_disable(void)
     SW_BT_PWR_N_SELECT_IO();
     SW_BT_PWR_N_MAKE_OUTPUT();
     SW_BT_PWR_N_SET();
+}
+
+void bluetooth_enable_communication(int (*data_handler)(unsigned char c))
+{
+	// 115200 bit/s at 8MHz clock
+	uart1_init(0x45);
+	uart1_set_input(data_handler);
+	BT_CTS_CLEAR();
+}
+
+void bluetooth_disable_communication(void)
+{
+	BT_CTS_SET();
 }
 
 void bluetooth_set_connected(int connected)
