@@ -57,7 +57,12 @@ uart0_writeb(unsigned char c)
     TXBUF0 = ringbuf_get(&txbuf);
   }
 }
-
+/**
+ * Start UART0 in UART mode
+ * @param ubr0  Value for baudrate register 0
+ * @param ubr1  Value for baudrate register 1
+ * @param umctl Value for modulation register
+ */
 void
 uart0_start(uint8_t ubr0, uint8_t ubr1, uint8_t umctl)
 {
@@ -90,6 +95,22 @@ uart0_start(uint8_t ubr0, uint8_t ubr1, uint8_t umctl)
   IE1 |= URXIE0 | UTXIE0;
 }
 
+/**
+ * Stop UART0 UART mode
+ *
+ * Deinitializes UART0 and reset
+ */
+void
+uart0_stop(void)
+{
+  mode = MODE_NONE;
+  UCTL0 = 0;
+  UCTL0 = SWRST;
+}
+
+/**
+ * Start UART0 in SPI mode
+ */
 void
 uart0_spi_start(void)
 {
@@ -113,6 +134,12 @@ uart0_spi_start(void)
   UCTL0 &= ~SWRST;
 }
 
+/**
+ * Stop UART0 SPI mode
+ *
+ * Deinitializes UART0 and resets SPI pins.
+ * @note Only SPI pins will be reset, not UART RX/TX!
+ */
 void
 uart0_spi_stop(void)
 {
@@ -131,6 +158,9 @@ uart0_spi_stop(void)
   UCLK0_MAKE_INPUT();
 }
 
+/**
+ * Start UART0 in I2C mode
+ */
 void
 uart0_i2c_start(void)
 {
@@ -150,6 +180,13 @@ uart0_i2c_start(void)
   UCTL0 |= I2CEN;
 }
 
+
+/**
+ * Stop UART0 I2C mode
+ *
+ * Deinitializes UART0 and resets I2C pins.
+ * @note Only I2C pins will be reset, not UART RX/TX or SIMO!
+ */
 void
 uart0_i2c_stop(void)
 {
@@ -160,6 +197,15 @@ uart0_i2c_stop(void)
   P3DIR &= ~0x0A;
 }
 
+/**
+ * Send data to a specific slave device
+ *
+ * @param address       Slave address
+ * @param data          Pointer to data buffer
+ * @param size          Size of data buffer in bytes
+ * @param callback      Callback function, will be called when transfer is
+ *                      completed, either successfully or with an error
+ */
 void
 uart0_i2c_write(uint8_t address, const void *data, uint8_t size,
     uart0_i2c_callback callback)
@@ -178,6 +224,15 @@ uart0_i2c_write(uint8_t address, const void *data, uint8_t size,
   I2CTCTL |= I2CSTT;
 }
 
+/**
+ * Receive data from specific slave device
+ *
+ * @param address       Slave address
+ * @param data          Pointer to data buffer
+ * @param size          Size of data buffer in bytes
+ * @param callback      Callback function, will be called when transfer is
+ *                      completed, either successfully or with an error
+ */
 void
 uart0_i2c_read(uint8_t address, void *data, uint8_t size,
     uart0_i2c_callback callback)
