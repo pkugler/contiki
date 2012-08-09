@@ -1,7 +1,6 @@
 #include "contiki.h"
 #include "dev/adc.h"
 #include "dev/bluetooth.h"
-#include "dev/busmaster.h"
 #include "dev/leds.h"
 #include "dev/uart0.h"
 #include "dev/uart1.h"
@@ -86,8 +85,7 @@ main(void)
   leds_init();
   leds_on(LEDS_ALL);
 
-  uart0_disable_all();
-  uart1_disable_all();
+  bluetooth_disable();
 
   // accelerometer g range select
   P4DIR |= 0x10;

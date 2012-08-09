@@ -6,7 +6,6 @@ CONTIKI_TARGET_DIRS = . dev
 CONTIKI_TARGET_SOURCEFILES += $(CONTIKI_TARGET_MAIN) \
 adc.c \
 bluetooth.c \
-busmaster.c \
 ds2411.c \
 gyro.c \
 hmc5843.c \

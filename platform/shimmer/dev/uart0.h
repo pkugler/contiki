@@ -4,7 +4,10 @@
 typedef void (*uart0_i2c_callback)(uint8_t success);
 
 void uart0_start(uint8_t ubr0, uint8_t ubr1, uint8_t umctl);
+
 void uart0_spi_start(void);
+void uart0_spi_stop(void);
+
 void uart0_i2c_start(void);
 void uart0_i2c_stop(void);
 void uart0_i2c_write(uint8_t address, const void *data, uint8_t size, uart0_i2c_callback callback);

@@ -1,7 +1,12 @@
 #include "contiki.h"
+#include "hwconf.h"
 #include "isr_compat.h"
 #include "dev/uart0.h"
 #include "lib/ringbuf.h"
+
+HWCONF_PIN(SIMO0, 3, 1)
+HWCONF_PIN(SOMI0, 3, 2)
+HWCONF_PIN(UCLK0, 3, 3)
 
 enum Mode
 {
@@ -84,8 +89,41 @@ void uart0_start(uint8_t ubr0, uint8_t ubr1, uint8_t umctl)
 
 void uart0_spi_start(void)
 {
-    mode = MODE_SPI;
+	mode = MODE_SPI;
+	UCTL0 = SWRST;
+	UCTL0 |= SYNC | CHAR | MM;
+
+	//UxTCTL = STC;
+
+	/* configure MOSI and clock as output and MISO as input */
+	SOMI0_SELECT_PM();
+	SOMI0_MAKE_INPUT();
+
+	SIMO0_SELECT_PM();
+	SIMO0_MAKE_OUTPUT();
+
+	UCLK0_SELECT_PM();
+	UCLK0_MAKE_OUTPUT();
+
+	/* enable SPI */
+    UCTL0 &= ~SWRST;
+}
+
+void uart0_spi_stop(void)
+{
+    mode = MODE_NONE;
+    UCTL0 = 0;
     UCTL0 = SWRST;
+
+	/* set SPI pins to input mode to save power */
+	SOMI0_SELECT_IO();
+	SOMI0_MAKE_INPUT();
+
+	SIMO0_SELECT_IO();
+	SIMO0_MAKE_INPUT();
+
+	UCLK0_SELECT_IO();
+	UCLK0_MAKE_INPUT();
 }
 
 void uart0_i2c_start(void)
