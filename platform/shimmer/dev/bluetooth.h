@@ -26,10 +26,6 @@ void bluetooth_enable_communication(int (*data_handler)(unsigned char c));
 //! The bluetooth module stays enabled and buffers incoming data.
 void bluetooth_disable_communication();
 
-//! Calls configured connect_handler
-//!
-//! This function should be called from ISR
-//! @param connected        Connection state of the device
-void bluetooth_set_connected(int connected);
+void bluetooth_isr();
 
 #endif // BLUETOOTH_H

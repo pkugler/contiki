@@ -6,6 +6,7 @@
 #include "dev/uart1.h"
 #include "dev/ds2411.h"
 #include "dev/serial-line.h"
+#include "dev/shimmerdock.h"
 #include "dev/watchdog.h"
 #include "isr_compat.h"
 
@@ -28,20 +29,11 @@ int dock_connected(void)
 
 ISR(PORT2, port2_interrupt)
 {
-    // test for bluetooth interrupt
-    if (P2IFG & 0x40) {
-        // clear interrupt flag
-        P2IFG &= ~0x40;
+  shimmerdock_isr();
+  bluetooth_isr();
 
-        // test if port is high
-        if (P2IN & 0x40) {
-            P2IES |= 0x40;
-            bluetooth_set_connected(1);
-        } else {
-            P2IES &= ~0x40;
-            bluetooth_set_connected(0);
-        }
-    }
+  // clear interrupts
+  P2IFG = 0;
 }
 
 static void

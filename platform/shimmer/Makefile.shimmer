@@ -9,6 +9,7 @@ bluetooth.c \
 ds2411.c \
 gyro.c \
 hmc5843.c \
+shimmerdock.c \
 uart0.c \
 uart1.c
 

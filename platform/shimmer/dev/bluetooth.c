@@ -87,9 +87,25 @@ void bluetooth_disable_communication(void)
 	BT_CTS_SET();
 }
 
-void bluetooth_set_connected(int connected)
+/**
+ * Tests IRQ state and calls configured connect_handler
+ *
+ * @param connected     Connection state of the device
+ */
+void
+bluetooth_isr(void)
 {
-    if (connect) {
-        connect(connected);
+  if (BT_PIO_CHECK_IRQ()) {
+    if (BT_PIO_READ()) {
+      BT_PIO_IRQ_EDGE_SELECTD();
+      if (connect) {
+        connect(1);
+      }
+    } else {
+      BT_PIO_IRQ_EDGE_SELECTU();
+      if (connect) {
+        connect(0);
+      }
     }
+  }
 }
