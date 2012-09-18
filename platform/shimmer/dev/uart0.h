@@ -10,6 +10,8 @@
 #ifndef UART0_H
 #define UART0_H
 
+#include "contiki.h"
+
 /**
  * I2C transfer callback function
  * @param success       Indicates if the transfer completed successfully.
@@ -23,6 +25,7 @@ void uart0_stop(void);
 
 void uart0_spi_start(void);
 void uart0_spi_stop(void);
+unsigned char uart0_spi_write_byte(unsigned char byte);
 
 void uart0_i2c_start(void);
 void uart0_i2c_stop(void);

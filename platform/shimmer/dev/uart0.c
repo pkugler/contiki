@@ -117,8 +117,11 @@ uart0_spi_start(void)
   mode = MODE_SPI;
   UCTL0 = SWRST;
   UCTL0 |= SYNC | CHAR | MM;
+  UTCTL0 = CKPH | SSEL1 | STC;
 
-  //UxTCTL = STC;
+  UBR00 = 255;
+  UBR10 = 0;
+  UMCTL0 = 0;
 
   /* configure MOSI and clock as output and MISO as input */
   SOMI0_SELECT_PM();
@@ -131,6 +134,7 @@ uart0_spi_start(void)
   UCLK0_MAKE_OUTPUT();
 
   /* enable SPI */
+  ME1 |= USPIE0;
   UCTL0 &= ~SWRST;
 }
 
@@ -156,6 +160,20 @@ uart0_spi_stop(void)
 
   UCLK0_SELECT_IO();
   UCLK0_MAKE_INPUT();
+}
+
+/**
+ * Send and receive a byte in SPI mode
+ *
+ * @param byte  The byte to be sent
+ * @returns     The byte returned from the slave device
+ */
+unsigned char
+uart0_spi_write_byte(unsigned char byte)
+{
+  TXBUF0 = byte;
+  while ((IFG1 & UTXIFG0) == 0) ;
+  return 0;
 }
 
 /**

@@ -47,12 +47,6 @@ msb_ports_init(void)
   P6SEL = 0x00; P6OUT = 0x00; P6DIR = 0x00;
 }
 
-static int uart0_input(unsigned char c)
-{
-    serial_line_input_byte(c);
-    return 0;
-}
-
 int
 main(void)
 {
@@ -110,8 +104,6 @@ main(void)
   /* System timers */
   process_start(&etimer_process, NULL);
   ctimer_init();
-
-  serial_line_init();
 
   leds_off(LEDS_ALL);
 
