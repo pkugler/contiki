@@ -157,13 +157,11 @@ main(void)
       * were awake.
       */
       energest_type_set(ENERGEST_TYPE_IRQ, irq_energest);
-/*
-      if (uart_edge) {
-	_BIC_SR(LPM1_bits + GIE);
-      } else {
-	_BIS_SR(LPM1_bits + GIE);
-      }
-*/
+
+      watchdog_stop();
+      _BIS_SR(GIE | SCG0 | SCG1 | CPUOFF);
+      watchdog_start();
+
       /*
        * We get the current processing time for interrupts that was
        * done during the LPM and store it for next time around. 
