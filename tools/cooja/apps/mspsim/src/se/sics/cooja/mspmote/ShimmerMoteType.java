@@ -21,11 +21,7 @@ import se.sics.cooja.dialogs.MessageList;
 import se.sics.cooja.dialogs.MessageList.MessageContainer;
 import se.sics.cooja.interfaces.MoteAttributes;
 import se.sics.cooja.interfaces.Position;
-import se.sics.cooja.mspmote.interfaces.MspClock;
-import se.sics.cooja.mspmote.interfaces.MspDebugOutput;
-import se.sics.cooja.mspmote.interfaces.MspLED;
-import se.sics.cooja.mspmote.interfaces.MspMoteID;
-import se.sics.cooja.mspmote.interfaces.MspSerial;
+import se.sics.cooja.mspmote.interfaces.*;
 
 @ClassDescription("Shimmer mote")
 @AbstractionLevelDescription("Emulated level")
@@ -169,6 +165,8 @@ public class ShimmerMoteType extends MspMoteType {
         MspMoteID.class,
         MspLED.class,
         MspSerial.class,
+        ShimmerAccelerometer.class,
+        ShimmerSensorInput.class,
         MspDebugOutput.class /* EXPERIMENTAL: Enable me for COOJA_DEBUG(..) */
     };
   }
