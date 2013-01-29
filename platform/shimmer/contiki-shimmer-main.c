@@ -34,6 +34,8 @@ ISR(PORT2, port2_interrupt)
 
   // clear interrupts
   P2IFG = 0;
+
+  LPM3_EXIT;
 }
 
 static void
@@ -159,7 +161,7 @@ main(void)
       energest_type_set(ENERGEST_TYPE_IRQ, irq_energest);
 
       watchdog_stop();
-      _BIS_SR(GIE | SCG0 | SCG1 | CPUOFF);
+      _BIS_SR(GIE | LPM2_bits);
       watchdog_start();
 
       /*
