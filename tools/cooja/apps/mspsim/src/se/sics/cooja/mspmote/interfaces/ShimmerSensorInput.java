@@ -48,21 +48,30 @@ public class ShimmerSensorInput extends MoteInterface {
           try {
             input.openFile(fc.getSelectedFile().getAbsolutePath());
           } catch (IOException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            e.printStackTrace();
           }
         }
       }
     });
     panel.add(button);
 
-    final JCheckBox checkAccelerometer = new JCheckBox("Use accelerometer", input.isAccelerometerEnabled());
+    final JCheckBox checkAccelerometer = new JCheckBox("Use accelerometer",
+        input.isAccelerometerEnabled());
     checkAccelerometer.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent actionEvent) {
         input.setAccelerometerEnabled(checkAccelerometer.isSelected());
       }
     });
-    final JCheckBox checkGyroscope = new JCheckBox("Use gyroscope");
+
+    final JCheckBox checkGyroscope = new JCheckBox("Use gyroscope",
+        input.isGyroscopeEnabled());
+    checkGyroscope.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent actionEvent) {
+        input.setGyroscopeEnabled(checkGyroscope.isSelected());
+      }
+    });
 
     panel.add(checkAccelerometer);
     panel.add(checkGyroscope);
@@ -85,16 +94,14 @@ public class ShimmerSensorInput extends MoteInterface {
 
   @Override
   public void releaseInterfaceVisualizer(JPanel panel) {
-    //To change body of implemented methods use File | Settings | File Templates.
   }
 
   @Override
   public Collection<Element> getConfigXML() {
-    return null;  //To change body of implemented methods use File | Settings | File Templates.
+    return null;
   }
 
   @Override
   public void setConfigXML(Collection<Element> configXML, boolean visAvailable) {
-    //To change body of implemented methods use File | Settings | File Templates.
   }
 }
