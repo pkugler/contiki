@@ -101,6 +101,8 @@ void bluetooth_writeb(unsigned char b)
 void
 bluetooth_isr(void)
 {
+  ENERGEST_ON(ENERGEST_TYPE_IRQ);
+
   if (BT_PIO_CHECK_IRQ()) {
     if (BT_PIO_READ()) {
       BT_PIO_IRQ_EDGE_SELECTD();
@@ -114,4 +116,6 @@ bluetooth_isr(void)
       }
     }
   }
+
+  ENERGEST_OFF(ENERGEST_TYPE_IRQ);
 }
