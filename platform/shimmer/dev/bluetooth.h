@@ -26,6 +26,11 @@ void bluetooth_enable_communication(int (*data_handler)(unsigned char c));
 //! The bluetooth module stays enabled and buffers incoming data.
 void bluetooth_disable_communication();
 
+//! Send a single byte over bluetooth
+//!
+//! @param b A byte to send over bluetooth
+void bluetooth_writeb(unsigned char b);
+
 void bluetooth_isr();
 
 #endif // BLUETOOTH_H

@@ -87,6 +87,12 @@ void bluetooth_disable_communication(void)
 	BT_CTS_SET();
 }
 
+void bluetooth_writeb(unsigned char b)
+{
+    while (!BT_RTS_READ()) ;
+    uart1_writeb(b);
+}
+
 /**
  * Tests IRQ state and calls configured connect_handler
  *
