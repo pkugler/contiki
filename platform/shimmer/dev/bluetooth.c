@@ -11,6 +11,21 @@ HWCONF_PIN(BT_RESET, 5, 5)
 
 static void (*connect)(unsigned char connected);
 
+static void process_connect_change()
+{
+  if (BT_PIO_READ()) {
+    BT_PIO_IRQ_EDGE_SELECTD();
+    if (connect) {
+      connect(1);
+    }
+  } else {
+    BT_PIO_IRQ_EDGE_SELECTU();
+    if (connect) {
+      connect(0);
+    }
+  }
+}
+
 void bluetooth_enable(void (*connect_handler)(unsigned char connected))
 {
     // power up bluetooth module
@@ -42,11 +57,7 @@ void bluetooth_enable(void (*connect_handler)(unsigned char connected))
     connect = connect_handler;
     BT_PIO_SELECT_IO();
     BT_PIO_MAKE_INPUT();
-    if (BT_PIO_READ()) {
-        BT_PIO_IRQ_EDGE_SELECTD();
-    } else {
-        BT_PIO_IRQ_EDGE_SELECTU();
-    }
+    process_connect_change();
     BT_PIO_ENABLE_IRQ();
 
     // rise cts to wake up device
@@ -104,17 +115,7 @@ bluetooth_isr(void)
   ENERGEST_ON(ENERGEST_TYPE_IRQ);
 
   if (BT_PIO_CHECK_IRQ()) {
-    if (BT_PIO_READ()) {
-      BT_PIO_IRQ_EDGE_SELECTD();
-      if (connect) {
-        connect(1);
-      }
-    } else {
-      BT_PIO_IRQ_EDGE_SELECTU();
-      if (connect) {
-        connect(0);
-      }
-    }
+    process_connect_change();
   }
 
   ENERGEST_OFF(ENERGEST_TYPE_IRQ);
