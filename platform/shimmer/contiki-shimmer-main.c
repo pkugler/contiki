@@ -161,7 +161,7 @@ main(void)
       energest_type_set(ENERGEST_TYPE_IRQ, irq_energest);
 
       watchdog_stop();
-      _BIS_SR(GIE | LPM2_bits);
+      _BIS_SR(GIE | LPM1_bits);
       watchdog_start();
 
       /*
@@ -181,3 +181,5 @@ main(void)
 
   return 0;
 }
+
+/* vim: set et ts=2 sw=2: */
