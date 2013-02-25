@@ -104,6 +104,11 @@ void bluetooth_writeb(unsigned char b)
     uart1_writeb(b);
 }
 
+void bluetooth_wait_ready()
+{
+  while (uart1_active()) ;
+}
+
 /**
  * Tests IRQ state and calls configured connect_handler
  *
@@ -120,3 +125,5 @@ bluetooth_isr(void)
 
   ENERGEST_OFF(ENERGEST_TYPE_IRQ);
 }
+
+/* vim: set et ts=2 tw=2 sw=2: */

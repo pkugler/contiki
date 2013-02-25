@@ -31,6 +31,9 @@ void bluetooth_disable_communication();
 //! @param b A byte to send over bluetooth
 void bluetooth_writeb(unsigned char b);
 
+//! Wait until uart transmission is completed
+void bluetooth_wait_ready();
+
 void bluetooth_isr();
 
 #endif // BLUETOOTH_H
