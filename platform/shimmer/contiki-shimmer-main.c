@@ -12,12 +12,6 @@
 
 //SENSORS(NULL);
 
-int putchar(int c)
-{
-    uart0_writeb(c);
-    return c;
-}
-
 int dock_connected(void)
 {
 	if (P2IN & 0x08) {
