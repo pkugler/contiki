@@ -27,6 +27,16 @@ int dock_connected(void)
 	}
 }
 
+ISR(PORT1, port1_interrupt)
+{
+  bluetooth_rts_isr();
+
+  // clear interrupts
+  P1IFG = 0;
+
+  LPM3_EXIT;
+}
+
 ISR(PORT2, port2_interrupt)
 {
   shimmerdock_isr();
@@ -161,7 +171,11 @@ main(void)
       energest_type_set(ENERGEST_TYPE_IRQ, irq_energest);
 
       watchdog_stop();
-      _BIS_SR(GIE | LPM1_bits);
+      if (bluetooth_active()) {
+        _BIS_SR(GIE | LPM0_bits);
+      } else {
+        _BIS_SR(GIE | LPM1_bits);
+      }
       watchdog_start();
 
       /*

@@ -42,10 +42,10 @@ static void __inline__ brief_pause(register unsigned int n)
  */
 #define udelay_6() { _NOP(); _NOP(); _NOP(); _NOP(); _NOP(); _NOP(); _NOP(); _NOP(); _NOP(); _NOP(); _NOP(); }
 
-#define UART0_CONF_TX_WITH_INTERRUPT 1
+#define UART0_CONF_TX_WITH_INTERRUPT 0
 #define UART0_CONF_RX_WITH_DMA 0
 
-#define UART1_CONF_TX_WITH_INTERRUPT 1
+#define UART1_CONF_TX_WITH_INTERRUPT 0
 #define UART1_CONF_RX_WITH_DMA 0
 
 #define SHELL_CONF_PROMPT
