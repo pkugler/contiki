@@ -2,6 +2,7 @@
 #include "dev/adc.h"
 #include "dev/bluetooth.h"
 #include "dev/leds.h"
+#include "dev/mma7361.h"
 #include "dev/uart0.h"
 #include "dev/uart1.h"
 #include "dev/ds2411.h"
@@ -78,21 +79,7 @@ main(void)
   leds_on(LEDS_ALL);
 
   bluetooth_disable();
-
-  // accelerometer g range select
-  P4DIR |= 0x10;
-  P4SEL &= ~0x10;
-  P4OUT &= ~0x10;
-
-  // accelerometer disable sleep
-  P5DIR |= 0x01;
-  P5SEL &= ~0x01;
-  P5OUT |= 0x01;
-
-  // accelerometer input pins
-  P6DIR &= ~0x38;
-  P6OUT &= ~0x38;
-  P6SEL |= 0x38;
+  mma7361_init();
 
   ADC12CTL0 = 0;
   ADC12CTL0 = ADC12ON;// | SHT02;
