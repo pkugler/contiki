@@ -98,17 +98,6 @@ main(void)
   bluetooth_disable();
   mma7361_init();
 
-  ADC12CTL0 = 0;
-  ADC12CTL0 = ADC12ON;
-  ADC12CTL1 = SHP | CONSEQ0;
-
-  ADC12MCTL0 = INCH0 | INCH1;
-  ADC12MCTL1 = INCH2 | EOS;
-  ADC12MCTL2 = INCH2 | INCH0 | EOS;
-
-  // start conversion
-  ADC12CTL0 |= ENC | ADC12SC;
-
   process_init();
 
   /* System timers */
