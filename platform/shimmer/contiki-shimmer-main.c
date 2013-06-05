@@ -13,15 +13,12 @@
 
 //SENSORS(NULL);
 
-int dock_connected(void)
-{
-	if (P2IN & 0x08) {
-		return 0;
-	} else {
-		return 1;
-	}
-}
-
+/**
+ * Interrupt service routine for IO port 1
+ *
+ * The Bluetooth driver is informed is informed about level changes
+ * on the RTS line.
+ */
 ISR(PORT1, port1_interrupt)
 {
   bluetooth_rts_isr();
@@ -32,6 +29,14 @@ ISR(PORT1, port1_interrupt)
   LPM3_EXIT;
 }
 
+/**
+ * Interrupt service routine for IO port 2
+ *
+ * Connection to the ShimmerDock can be detected by a pin on port 2.
+ * The Bluetooth connection pin is also connected here.
+ * Both ISRs are invoked an check if their specific interrupt has
+ * occured.
+ */
 ISR(PORT2, port2_interrupt)
 {
   shimmerdock_isr();
@@ -43,6 +48,12 @@ ISR(PORT2, port2_interrupt)
   LPM3_EXIT;
 }
 
+/**
+ * Initial port configuration
+ *
+ * Every IO pin is configured as input pin, correct set-up is
+ * performed by the individual drivers.
+ */
 static void
 msb_ports_init(void)
 {
@@ -54,6 +65,13 @@ msb_ports_init(void)
   P6SEL = 0x00; P6OUT = 0x00; P6DIR = 0x00;
 }
 
+/**
+ * Application main entry point
+ *
+ * Initialize device drivers, start applications and handle
+ * cooperative scheduling. If no task is requiring CPU time, the
+ * controller enters low power mode.
+ */
 int
 main(void)
 {
@@ -72,9 +90,8 @@ main(void)
 // SMCLK:  8 MHz
 // ACLK:  32.768 kHz
   BCSCTL1 = RSEL2 | RSEL1 | RSEL0;
-  BCSCTL2 = SELM1 | SELS;// | DIVS0 | DIVS1;
+  BCSCTL2 = SELM1 | SELS;
 
-//  sht11_init();
   leds_init();
   leds_on(LEDS_ALL);
 
@@ -82,8 +99,8 @@ main(void)
   mma7361_init();
 
   ADC12CTL0 = 0;
-  ADC12CTL0 = ADC12ON;// | SHT02;
-  ADC12CTL1 = SHP | CONSEQ0;// ADC12SSEL0 | ADC12SSEL1;
+  ADC12CTL0 = ADC12ON;
+  ADC12CTL1 = SHP | CONSEQ0;
 
   ADC12MCTL0 = INCH0 | INCH1;
   ADC12MCTL1 = INCH2 | EOS;
