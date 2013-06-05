@@ -2,7 +2,6 @@
 #include "hwconf.h"
 #include "isr_compat.h"
 #include "dev/uart1.h"
-#include "dev/leds.h"
 #include "lib/ringbuf.h"
 
 HWCONF_PIN(BT_RTS, 1, 6)
@@ -165,11 +164,9 @@ bluetooth_rts_isr(void)
 
   if (BT_RTS_CHECK_IRQ()) {
     if (BT_RTS_READ()) {
-      leds_on(LEDS_RED);
       buffer_full = 1;
       BT_RTS_IRQ_EDGE_SELECTD();
     } else {
-      leds_off(LEDS_RED);
       buffer_full = 0;
       if (transmitting == 0 && ringbuf_elements(&txbuf) > 0) {
         transmitting = 1;
@@ -200,4 +197,4 @@ ISR(UART1TX, uart1_tx_interrupt)
   ENERGEST_OFF(ENERGEST_TYPE_IRQ);
 }
 
-/* vim: set et ts=2 tw=2 sw=2: */
+/* vim: set et ts=2 sw=2: */
