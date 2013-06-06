@@ -6,6 +6,9 @@ HWCONF_PIN(GYRO_PWREN_N, 1, 1)
 HWCONF_PIN(SEL_A0, 1, 4)
 HWCONF_PIN(GYRO_ZERO, 3, 4)
 
+/**
+ * Enable voltage regulator for gyroscope
+ */
 void gyro_enable(void)
 {
     gyro_disable();
@@ -20,6 +23,9 @@ void gyro_enable(void)
     SEL_A0_CLEAR();
 }
 
+/**
+ * Disable voltage regulator for gyroscope
+ */
 void gyro_disable(void)
 {
     SEL_A0_SELECT_IO();

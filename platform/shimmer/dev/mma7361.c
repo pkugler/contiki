@@ -7,6 +7,9 @@ HWCONF_PIN(ADC_ACCELZ, 6, 3)
 HWCONF_PIN(ADC_ACCELY, 6, 4)
 HWCONF_PIN(ADC_ACCELX, 6, 5)
 
+/**
+ * Port initialization for the accelerometer
+ */
 void mma7361_init(void)
 {
   // set to 1.5G
@@ -33,16 +36,25 @@ void mma7361_init(void)
   ADC_ACCELZ_CLEAR();
 }
 
+/*
+ * Wake up the accelerometer
+ */
 void mma7361_enable(void)
 {
   ACCEL_SLEEP_N_SET();
 }
 
+/*
+ * Put the accelerometer in sleep mode
+ */
 void mma7361_disable(void)
 {
   ACCEL_SLEEP_N_CLEAR();
 }
 
+/**
+ * Set accelerometer range
+ */
 void mma7361_set_range(enum mma7361_range range)
 {
   switch (range) {
