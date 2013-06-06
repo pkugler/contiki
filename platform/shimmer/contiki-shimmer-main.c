@@ -108,12 +108,13 @@ main(void)
 
   ds2411_init();
 
-  // University of California Berkeley's OUI
+  /* Overwrite unique id, this was taken from the original Shimmer software */
+  /* University of California Berkeley's OUI */
   ds2411_id[0] = 0x00;
   ds2411_id[1] = 0x12;
   ds2411_id[2] = 0x6d;
 
-  // Following two octets must be 'LO' -- "local" in order to use UCB's OUI
+  /* Following two octets must be 'LO' -- "local" in order to use UCB's OUI */
   ds2411_id[3] = 'L';
   ds2411_id[4] = 'O';
 
@@ -158,11 +159,17 @@ main(void)
       energest_type_set(ENERGEST_TYPE_IRQ, irq_energest);
 
       watchdog_stop();
+
+      /*
+       * If a Bluetooth transmission is running, go only to LPM0.
+       * LPM1 and higher interrupt running UART communications.
+       */
       if (bluetooth_active()) {
         _BIS_SR(GIE | LPM0_bits);
       } else {
         _BIS_SR(GIE | LPM1_bits);
       }
+
       watchdog_start();
 
       /*
